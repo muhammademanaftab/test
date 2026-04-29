@@ -26,8 +26,9 @@ jobs:
       - name: Install CrossGuard from public source
         run: |
           python -m pip install --upgrade pip
-          # The [cli] extra brings in click, which the CLI needs.
-          pip install "crossguard[cli] @ git+https://github.com/muhammademanaftab/CrossGuard.git#subdirectory=code"
+          # [cli] brings click. reportlab is needed because src/export/__init__.py
+          # eagerly imports the PDF exporter — even when we only want SARIF output.
+          pip install "crossguard[cli] @ git+https://github.com/muhammademanaftab/CrossGuard.git#subdirectory=code" reportlab
 
       - name: Run compatibility analysis on each source file
         run: |
