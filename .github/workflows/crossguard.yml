@@ -45,11 +45,28 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Upload SARIF results to Code Scanning
-        if: always()
+      # Each SARIF upload needs a unique `category` — Code Scanning won't
+      # accept multiple runs of the same category in a single upload.
+      - name: Upload SARIF (HTML)
+        if: always() && hashFiles('sarif/index_html.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: sarif/
+          sarif_file: sarif/index_html.sarif
+          category: crossguard-html
+
+      - name: Upload SARIF (CSS)
+        if: always() && hashFiles('sarif/styles_css.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif/styles_css.sarif
+          category: crossguard-css
+
+      - name: Upload SARIF (JS)
+        if: always() && hashFiles('sarif/app_js.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif/app_js.sarif
+          category: crossguard-js
 
       - name: Upload SARIF as a build artifact (downloadable)
         if: always()
