@@ -1,0 +1,41 @@
+/* This file deliberately uses bleeding-edge CSS to demonstrate
+   the CI quality gate failing. None of these are baseline yet. */
+
+.tooltip {
+    /* Anchor positioning — Limited in caniuse */
+    anchor-name: --target;
+    position-anchor: --target;
+    inset-area: top span-all;
+    position-try: flip-block;
+}
+
+.input-auto {
+    /* field-sizing: still very new */
+    field-sizing: content;
+}
+
+.headline {
+    /* text-wrap: balance — Newly available, not Widely */
+    text-wrap: balance;
+}
+
+/* CSS view transitions — Newly */
+@view-transition {
+    navigation: auto;
+}
+
+/* Deeply nested selectors via :has() and :is() */
+.card:has(.tag:is(.urgent, .warning)) {
+    outline: 2px solid red;
+}
+
+/* CSS filter() function — Limited in caniuse, NOT supported in Chrome/Firefox/Edge.
+   This is what trips the quality gate. */
+.thumbnail {
+    background-image: filter(url("photo.jpg"), grayscale(100%) blur(2px));
+}
+
+/* CSS paint() worklet — Limited support */
+.painted {
+    background-image: paint(checkerboard);
+}

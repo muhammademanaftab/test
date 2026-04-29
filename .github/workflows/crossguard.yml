@@ -33,7 +33,9 @@ jobs:
       - name: Run compatibility analysis on each source file
         run: |
           mkdir -p sarif
-          set -e
+          # Don't stop on first failure — analyze every file so each one
+          # produces its SARIF, then exit non-zero at the end if any gate failed.
+          OVERALL=0
           for f in src/*.html src/*.css src/*.js; do
             [ -e "$f" ] || continue
             name=$(basename "$f" | tr '.' '_')
@@ -41,9 +43,12 @@ jobs:
             crossguard analyze "$f" \
               --format sarif \
               --output-sarif "sarif/${name}.sarif" \
-              --fail-on-score 50
+              --fail-on-score 50 \
+              --fail-on-errors 0 \
+              || OVERALL=1
             echo "::endgroup::"
           done
+          exit $OVERALL
 
       # Each SARIF upload needs a unique `category` — Code Scanning won't
       # accept multiple runs of the same category in a single upload.
