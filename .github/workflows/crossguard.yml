@@ -1,0 +1,57 @@
+name: Browser Compatibility Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  # Required for github/codeql-action/upload-sarif to write findings
+  security-events: write
+  contents: read
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the demo repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CrossGuard from public source
+        run: |
+          python -m pip install --upgrade pip
+          pip install "git+https://github.com/muhammademanaftab/CrossGuard.git#subdirectory=code"
+
+      - name: Run compatibility analysis on each source file
+        run: |
+          mkdir -p sarif
+          set -e
+          for f in src/*.html src/*.css src/*.js; do
+            [ -e "$f" ] || continue
+            name=$(basename "$f" | tr '.' '_')
+            echo "::group::Analysing $f"
+            crossguard analyze "$f" \
+              --format sarif \
+              --output-sarif "sarif/${name}.sarif" \
+              --fail-on-score 50
+            echo "::endgroup::"
+          done
+
+      - name: Upload SARIF results to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif/
+
+      - name: Upload SARIF as a build artifact (downloadable)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crossguard-sarif
+          path: sarif/

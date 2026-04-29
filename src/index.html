@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrossGuard CI Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="hero">
+        <h1>CrossGuard CI Demo</h1>
+        <p>A small page to give the CI workflow something real to analyse.</p>
+    </header>
+
+    <section class="card-section">
+        <article class="card" data-card-id="1" data-priority="high">
+            <h2>Card One</h2>
+            <p>Demonstrates the <code>data-*</code> attribute family.</p>
+        </article>
+        <article class="card" data-card-id="2" data-priority="medium">
+            <h2>Card Two</h2>
+            <p>Inline SVG icon below uses <code>fill="currentColor"</code>:</p>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L4 12l8 10 8-10z"/>
+            </svg>
+        </article>
+    </section>
+
+    <form class="signup">
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" required>
+        <button type="submit">Subscribe</button>
+    </form>
+
+    <div class="overlay" hidden>This panel is hidden by the boolean attribute.</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
