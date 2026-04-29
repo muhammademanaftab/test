@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
 
+# Required so github/codeql-action/upload-sarif can write findings.
 permissions:
-  # Required for github/codeql-action/upload-sarif to write findings
   security-events: write
   contents: read
 
@@ -15,67 +15,39 @@ jobs:
   compatibility:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the demo repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install CrossGuard from public source
+      - name: Install Cross Guard
+        # Once Cross Guard is on PyPI: pip install "crossguard[cli]"
+        # For now, install directly from the public source repo.
+        run: pip install "crossguard[cli] @ git+https://github.com/muhammademanaftab/CrossGuard.git#subdirectory=code"
+
+      - name: Run compatibility analysis
+        # One command, one SARIF — directory analysis now does the loop for us.
+        # --fail-on-errors 0 makes the gate trip on the deliberately-bad file
+        # (src/cutting-edge.css uses paint() and filter() which aren't supported).
         run: |
-          python -m pip install --upgrade pip
-          # [cli] brings click. reportlab is needed because src/export/__init__.py
-          # eagerly imports the PDF exporter — even when we only want SARIF output.
-          pip install "crossguard[cli] @ git+https://github.com/muhammademanaftab/CrossGuard.git#subdirectory=code" reportlab
+          crossguard analyze src/ \
+            --format sarif \
+            --output-sarif results.sarif \
+            --fail-on-score 80 \
+            --fail-on-errors 0
 
-      - name: Run compatibility analysis on each source file
-        run: |
-          mkdir -p sarif
-          # Don't stop on first failure — analyze every file so each one
-          # produces its SARIF, then exit non-zero at the end if any gate failed.
-          OVERALL=0
-          for f in src/*.html src/*.css src/*.js; do
-            [ -e "$f" ] || continue
-            name=$(basename "$f" | tr '.' '_')
-            echo "::group::Analysing $f"
-            crossguard analyze "$f" \
-              --format sarif \
-              --output-sarif "sarif/${name}.sarif" \
-              --fail-on-score 50 \
-              --fail-on-errors 0 \
-              || OVERALL=1
-            echo "::endgroup::"
-          done
-          exit $OVERALL
-
-      # Each SARIF upload needs a unique `category` — Code Scanning won't
-      # accept multiple runs of the same category in a single upload.
-      - name: Upload SARIF (HTML)
-        if: always() && hashFiles('sarif/index_html.sarif') != ''
+      - name: Upload SARIF results to Code Scanning
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: sarif/index_html.sarif
-          category: crossguard-html
+          sarif_file: results.sarif
+          category: crossguard
 
-      - name: Upload SARIF (CSS)
-        if: always() && hashFiles('sarif/styles_css.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: sarif/styles_css.sarif
-          category: crossguard-css
-
-      - name: Upload SARIF (JS)
-        if: always() && hashFiles('sarif/app_js.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: sarif/app_js.sarif
-          category: crossguard-js
-
-      - name: Upload SARIF as a build artifact (downloadable)
+      - name: Upload SARIF as build artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: crossguard-sarif
-          path: sarif/
+          path: results.sarif
